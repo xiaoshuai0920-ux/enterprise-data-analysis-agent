@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: data_agent
+      POSTGRES_USER: data_agent
+      POSTGRES_PASSWORD: data_agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    environment:
+      MOCK_MODE: "true"
+      DATABASE_URL: "postgresql+psycopg://data_agent:data_agent@postgres:5432/data_agent"
+      REDIS_URL: "redis://redis:6379/0"
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:8080"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
